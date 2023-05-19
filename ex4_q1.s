@@ -2,8 +2,9 @@
 .text
 
 main:
-    addi $3, $0, 3 
+    add $3, $0, $0 
     lw $3, 0x73009($0)
+    addi $5, $5, 1
 
     movsg $2, $cctrl
     andi $2, $2, 0x000f
@@ -17,6 +18,11 @@ main:
 
 loop:
     sw $3, 0x73009($0)
+    subi $4, $3, 0xA
+    bnez $4, loop
+    addi $5, $5, 1
+    sw $5, 0x73008($0)
+    add $3, $0, $0
 j loop
 
 handler:
