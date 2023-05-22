@@ -45,17 +45,15 @@ handle_irq1:
     rfe 
 
 handle_pp:
-    lw $13, 0x73005($0)
+    lw $13, 0x73001($0)
     beqz $13, handle_pp_exit
     addi $3, $3, 1          #Handle our interrupt
-    sw $13, 0x73005($0)      #Acknowledge the interrupt
-
 
 handle_pp_exit:
     sw $0, 0x73005($0) 
     rfe 
 
 
-.data
+.bss
 old_handler:
-    .word 0
+    .word
