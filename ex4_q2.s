@@ -45,8 +45,10 @@ handler:
     jr $13                  #That we saved earlier.
 
 handle_irq2:
-    addi $3, $3, 1          #Handle our interrupt
-    sw $0, 0x72003($0)      #Acknowledge the interrupt
+    lw $13, counter($0)
+    addi $13, $13, 1          #Handle our interrupt
+    sw $13, counter($0)
+    sw $0, 0x7f000($0)      #Acknowledge the interrupt
     rfe 
 
 # handle_pp:
@@ -62,3 +64,6 @@ handle_irq2:
 .bss
 old_handler:
     .word
+.data
+    counter:
+    .word 0
