@@ -19,12 +19,14 @@ main:
     movgs $evec, $2         #And copy it into the $evec register
 
 loop:
-    sw $3, 0x73009($0)
-    subi $4, $3, 0x000A
-    bnez $4, loop
-    addi $5, $5, 1
-    sw $5, 0x73008($0)
-    add $3, $0, $0
+    remi $6, $3, 10
+    divi $7, $3, 10
+
+    sw $6,0x73009($0)
+    sw $7,0x73008($0)
+
+    snei $6, $3, 99
+    beqz $6, end
 j loop
 
 handler:
@@ -53,6 +55,7 @@ handle_pp_exit:
     sw $0, 0x73005($0) 
     rfe 
 
+end:
 
 .bss
 old_handler:
