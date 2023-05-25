@@ -14,8 +14,8 @@ main:
     sw $11, 0x72001($0)
     addi $11, $0, 0x3       # Enable the timer and autorestart
     sw $11, 0x72000($0)
-    # addi $2, $0, 0x3      #Not sure if this is needed
-    # sw $2, 0x73004($0)
+    addi $2, $0, 0x3      
+    sw $2, 0x73004($0)
 
     movsg $2, $evec         #Copy the old handler’s address to $2
     sw $2, old_handler($0)  #Save it to memory
@@ -34,14 +34,16 @@ loop:
 j loop
 
 handler:
-    movsg $13, $estat       #Get the value of the exception status register
-    andi $13, $13, 0xff70   #Check if interrupt we don’t handle ourselves
-    beqz $13, handle_pp     #If it one of ours, go to our handler
+
 
     movsg $13, $estat       #Get the value of the exception status register
     andi $13, $13, 0xffb0   #Check if interrupt we don’t handle ourselves
     beqz $13, handle_irq2   #If it one of ours, go to our handler
 
+    movsg $13, $estat       #Get the value of the exception status register
+    andi $13, $13, 0xff70   #Check if interrupt we don’t handle ourselves
+    beqz $13, handle_pp     #If it one of ours, go to our handler
+    
     lw $13, old_handler($0) #Otherwise, jump to the default handler
     jr $13                  #That we saved earlier.
 
@@ -67,13 +69,18 @@ handle_pp_exit:
     sw $0, 0x73005($0)      #Acknowledge the interrupt
     rfe 
 startstop:
-    # lw $13, 0x72001($0)
-    addi $13, $0, 0x0
-    # andi $13, $13, 0x3
-    sw $13, 0x72001($0)
+    lw $13, 0x72000($0)
+    xori $13, $13, 0x3    #should work
+    sw $13, 0x72000($0)
     j handle_pp_exit
 
 resetWhenOff:
+    lw $13, 0x72000($0)
+    subi $13, $13, 0x3
+    beqz $13, handle_pp_exit
+    add $3, $0, $0
+    j handle_pp_exit
+
 
 end:
 
