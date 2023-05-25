@@ -2,6 +2,8 @@
 .text
 
 main:
+    addi $4, $0, 0x1
+    sw $4, tflag($0)
     add $3, $0, $0 
 
     movsg $2, $cctrl        #Get val of cctrl
@@ -23,6 +25,8 @@ main:
     movgs $evec, $2         #And copy it into the $evec register
 
 loop:
+    lw $4, tflag($0)
+    beqz $4, end
     remi $6, $3, 10
     divi $7, $3, 10
 
@@ -59,15 +63,16 @@ handle_pp:
     subi $4, $13, 0x1
     beqz $4, startstop
     
-    andi $4, $13, 0x2
-    bnez $4, resetWhenOff
+    subi $4, $13, 0x2
+    beqz $4, resetWhenOff
     
-    andi $4, $13, 0x4
-    bnez $4, end            #terminate
+    subi $4, $13, 0x4
+    beqz $4, terminationflag            #terminate
 
 handle_pp_exit:
     sw $0, 0x73005($0)      #Acknowledge the interrupt
     rfe 
+
 startstop:
     lw $13, 0x72000($0)
     xori $13, $13, 0x3    #should work
@@ -81,8 +86,13 @@ resetWhenOff:
     add $3, $0, $0
     j handle_pp_exit
 
+terminationflag:
+    add $13, $0, $0
+    sw $13, tflag($0)
+    j handle_pp_exit
 
 end:
+    jr $ra
 
 .bss
 old_handler:
@@ -90,3 +100,5 @@ old_handler:
 .data
     counter:
     .word 0
+    tflag:
+    .word 0 
