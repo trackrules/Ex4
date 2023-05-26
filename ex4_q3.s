@@ -14,7 +14,7 @@ main:
     sw $0, 0x72003($0)      # Make sure there are no old interrupts still hanging around
     addi $11, $0, 2400    # Put our auto load value in
     sw $11, 0x72001($0)
-    addi $11, $0, 0x0       # Enable the timer and autorestart
+    addi $11, $0, 0x2       # Enable the timer and autorestart
     sw $11, 0x72000($0)
     addi $2, $0, 0x3      
     sw $2, 0x73004($0)
@@ -75,7 +75,7 @@ handle_pp_exit:
 
 startstop:
     lw $13, 0x72000($0)
-    xori $13, $13, 0x3    #should work
+    xori $13, $13, 0x1    #should work
     sw $13, 0x72000($0)
     j handle_pp_exit
 
