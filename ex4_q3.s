@@ -4,7 +4,8 @@
 main:
     addi $4, $0, 0x1
     sw $4, tflag($0)
-    add $3, $0, $0 
+    add $3, $0, $0
+    sw $3, counter($0) 
 
     movsg $2, $cctrl        #Get val of cctrl
     andi $2, $2, 0x000f     #Disable interrupts
@@ -27,11 +28,14 @@ main:
 loop:
     lw $4, tflag($0)
     beqz $4, end
+
+    lw $3, counter($0)
+
     remi $6, $3, 10
     divi $7, $3, 10
 
-    sw $6,0x73009($0)
-    sw $7,0x73008($0)
+    sw $6,0x73009($0)       #display 1s
+    sw $7,0x73008($0)       #display 10s
 
     snei $6, $3, 99
     beqz $6, end
@@ -52,22 +56,27 @@ handler:
     jr $13                  #That we saved earlier.
 
 handle_irq2:
-    addi $3, $3, 1          #Handle our interrupt
+    lw $13, counter($0)
+    addi $13, $13, 1          #Handle our interrupt/increment counter
+    sw $13, counter($0)
     sw $0, 0x72003($0)      #Acknowledge the interrupt
     rfe 
     
 handle_pp:
-    lw $13, 0x73001($0)
-    beqz $13, handle_pp_exit
+    lw $13, 0x73001($0)     #get button value
+    beqz $13, handle_pp_exit    #if not a button i.e other paralell, exit and acknowledge
 
-    subi $4, $13, 0x1
-    beqz $4, startstop
+    lw $13, 0x73001($0)
+    subi $13, $13, 0x1       #is it button RHS/0
+    beqz $13, startstop      #pause
     
-    subi $4, $13, 0x2
-    beqz $4, resetWhenOff
+    lw $13, 0x73001($0)
+    subi $13, $13, 0x2       #is it button MID/1
+    beqz $13, resetWhenOff   #reset timer
     
-    subi $4, $13, 0x4
-    beqz $4, terminationflag            #terminate
+    lw $13, 0x73001($0)
+    subi $13, $13, 0x4       #is it button LHS/2
+    beqz $13, terminationflag    #terminate prog
 
 handle_pp_exit:
     sw $0, 0x73005($0)      #Acknowledge the interrupt
