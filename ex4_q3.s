@@ -1,10 +1,11 @@
 .global main
 .text
 
+#======Main and Loops=====================
 main:
-    addi $4, $0, 0x1
+    addi $4, $0, 0x1        #termination flag disable
     sw $4, tflag($0)
-    add $3, $0, $0
+    add $3, $0, $0          #init counter
     sw $3, counter($0) 
 
     movsg $2, $cctrl        #Get val of cctrl
@@ -13,11 +14,11 @@ main:
     movgs $cctrl, $2        #store back in cctrl
 
     sw $0, 0x72003($0)      # Make sure there are no old interrupts still hanging around
-    addi $11, $0, 2400    # Put our auto load value in
+    addi $11, $0, 2400      # Put our auto load value in
     sw $11, 0x72001($0)
     addi $11, $0, 0x2       # Enable the timer and autorestart
     sw $11, 0x72000($0)
-    addi $2, $0, 0x3      
+    addi $2, $0, 0x3        #Paralell control interupt enable 
     sw $2, 0x73004($0)
 
     movsg $2, $evec         #Copy the old handler’s address to $2
@@ -26,32 +27,30 @@ main:
     movgs $evec, $2         #And copy it into the $evec register
 
 loop:
-    lw $4, tflag($0)
-    beqz $4, end
+    lw $4, tflag($0)        #test termination flag
+    beqz $4, end            #if termination flag set to zero, got to end subR
 
-    lw $3, counter($0)
+    lw $3, counter($0)      #get counter val
 
-    remi $6, $3, 10
-    divi $7, $3, 10
+    remi $6, $3, 10         #get 1s
+    divi $7, $3, 10         #get 10s
 
     sw $6,0x73009($0)       #display 1s
     sw $7,0x73008($0)       #display 10s
 
-    snei $6, $3, 99
+    snei $6, $3, 99         #if counter hits max limit then jump to end subR
     beqz $6, end
-j loop
+    j loop                  #repeat main diplay loop
 
+#======handlers===================================
 handler:
-
-
     movsg $13, $estat       #Get the value of the exception status register
-    andi $13, $13, 0xffb0   #Check if interrupt we don’t handle ourselves
+    andi $13, $13, 0xffb0   #Check for timer/irq2 interrupt
     beqz $13, handle_irq2   #If it one of ours, go to our handler
 
     movsg $13, $estat       #Get the value of the exception status register
-    andi $13, $13, 0xff70   #Check if interrupt we don’t handle ourselves
+    andi $13, $13, 0xff70   #Check for Button/irq3 interrupt
     beqz $13, handle_pp     #If it one of ours, go to our handler
-    
     lw $13, old_handler($0) #Otherwise, jump to the default handler
     jr $13                  #That we saved earlier.
 
@@ -82,26 +81,33 @@ handle_pp_exit:
     sw $0, 0x73005($0)      #Acknowledge the interrupt
     rfe 
 
-startstop:
-    lw $13, 0x72000($0)
-    xori $13, $13, 0x1    #should work
-    sw $13, 0x72000($0)
-    j handle_pp_exit
+#=========Button push handlers==============================
+
+startstop:                  #pause    
+    lw $13, 0x72000($0)     #get timer control bit
+    xori $13, $13, 0x1      #toggle timer enable only
+    sw $13, 0x72000($0)     #set timer control bit
+    j handle_pp_exit        #exit interrupt handler
+
 
 resetWhenOff:
-    lw $13, 0x72000($0)
-    subi $13, $13, 0x3
-    beqz $13, handle_pp_exit
-    add $3, $0, $0
-    j handle_pp_exit
+    lw $13, 0x72000($0)     #get timer control bit    
+    subi $13, $13, 0x3      #is the timer running
+    beqz $13, handle_pp_exit  #if timer running, got to printer
+    add $13, $0, $0          #if not, reset timer  
+    sw $13, counter($0)   
+    j handle_pp_exit        #exit interrupt handler
 
 terminationflag:
-    add $13, $0, $0
+    add $13, $0, $0         #enable Tflag
     sw $13, tflag($0)
-    j handle_pp_exit
+    j handle_pp_exit        #exit interrupt handler
 
-end:
+#===========End Clause=================================
+end:                        #terminate prog
     jr $ra
+
+#===========Memory=================================
 
 .bss
 old_handler:

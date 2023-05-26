@@ -2,7 +2,8 @@
 .text
 
 main:
-    add $3, $0, $0 
+    add $3, $0, $0          #init counter 
+    sw $3, counter($0)
 
     movsg $2, $cctrl        #Get val of cctrl
     andi $2, $2, 0x000f     #Disable interrupts
@@ -21,13 +22,16 @@ main:
     movgs $evec, $2         #And copy it into the $evec register
 
 loop:
-    remi $6, $3, 10
-    divi $7, $3, 10
+    lw $3, counter($0)      #get counter val
 
-    sw $6,0x73009($0)
-    sw $7,0x73008($0)
+    remi $6, $3, 10         #get 1s
+    divi $7, $3, 10         #get 10s
 
-    snei $6, $3, 99
+    sw $6,0x73009($0)       #display 1s
+    sw $7,0x73008($0)       #display 10s
+
+
+    snei $6, $3, 99         #stop value set
     beqz $6, end
 j loop
 
@@ -40,7 +44,9 @@ handler:
     jr $13                  #That we saved earlier.
 
 handle_irq2:
-    addi $3, $3, 1          #Handle our interrupt
+    lw $13, counter($0)
+    addi $13, $13, 1          #Handle our interrupt/increment counter
+    sw $13, counter($0)
     sw $0, 0x72003($0)      #Acknowledge the interrupt
     rfe 
 

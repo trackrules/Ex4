@@ -3,7 +3,7 @@
 
 #======Main and Loops=====================
 main:
-    addi $4, $0, 0x1        #termination flag enable
+    addi $4, $0, 0x1        #termination flag disable
     sw $4, tflag($0)
     addi $4, $0, 0x1        #printer disable
     sw $4, printer($0)
@@ -34,7 +34,7 @@ loop:
     lw $4, printer($0)      #test printer
     beqz $4, serialprinter  #if printer set to zero, got to end subR
 
-    lw $3, counter($0)
+    lw $3, counter($0)      #get counter val
 
     divi $8, $3, 100        #divide counter by 100 for ssd display
 
@@ -155,7 +155,7 @@ serialprinterSet:
     j handle_pp_exit        #exit interrupt handler    
 
 terminationflag:
-    add $13, $0, $0
+    add $13, $0, $0         #enable Tflag
     sw $13, tflag($0)
     j handle_pp_exit        #exit interrupt handler
 
